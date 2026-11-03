@@ -888,6 +888,8 @@ buildYearBtns();
 // ========== SAMOROZWÓJ ==========
 const FX={PLN:1,EUR:4.25,USD:3.65};
 const AI_INVOICES=[['2026-04-27',89.68],['2026-05-27',90],['2026-06-27',90],['2026-07-27',90],['2026-08-27',90],['2026-09-08',125.23],['2026-10-08',180]];
+const COMMUTE={km:20,days:20,l100:7,price:7};
+const COMMUTE_KM=COMMUTE.km*2*COMMUTE.days,COMMUTE_L=COMMUTE_KM*COMMUTE.l100/100;
 const VERCEL_USAGE=[['CDN',1.63],['Functions',24.80],['ISR i obrazy',10.06],['Web Analytics',1.83],['Build CPU',23.27]];
 const DEV_COSTS=[
   {cat:'AI',items:[
@@ -907,6 +909,9 @@ const DEV_COSTS=[
     ['Supabase compute',15,'USD']]},
   {cat:'Wiedza',items:[
     ['Medium membership (50 USD / 12 mies.)',50/12,'USD']]},
+  {cat:'Biuro i dojazdy',items:[
+    ['Wynajem biura z energią elektryczną (VAT ZW)',1050,'PLN'],
+    ['Paliwo: dojazdy do biura',COMMUTE_L*COMMUTE.price,'PLN']]},
 ];
 
 const num=(v,d)=>v.toLocaleString('pl-PL',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -927,6 +932,7 @@ function buildDevCosts(){
     } else if(curs.size>1){
       h+='<div class="dev-formula">'+g.items.map(([,v,cur])=>cur==='PLN'?num(v,0):'('+num(v,2)+' '+cur+' &times; '+num(FX[cur],2)+')').join(' + ')+' = <b>'+fmt(sub)+'</b></div>';
     }
+    if(g.cat==='Biuro i dojazdy') h+='<div class="dev-formula">Paliwo: '+COMMUTE.km+' km &times; 2 &times; '+COMMUTE.days+' dni = '+COMMUTE_KM+' km &middot; '+COMMUTE_KM+' km &times; '+COMMUTE.l100+' l/100 km = '+num(COMMUTE_L,0)+' l &middot; '+num(COMMUTE_L,0)+' l &times; '+COMMUTE.price+' zł = <b>'+money(COMMUTE_L*COMMUTE.price,'PLN')+'</b></div>';
     if(g.cat==='Wiedza') h+='<div class="dev-formula">50 / 12 = <b>'+money(50/12,'USD')+'</b> &asymp; '+fmt(sub)+'</div>';
     if(g.cat==='DevOps'){
       const u=VERCEL_USAGE.map(x=>x[1]),uSum=u.reduce((a,b)=>a+b,0);
@@ -943,7 +949,7 @@ function buildDevCosts(){
   }).join('');
   const income=RATE_ACTUAL*160;
   document.getElementById('devCosts').innerHTML=
-    '<div class="dev-head"><div><div class="market-title">Ile przeznaczam na samorozwój jako Fullstack</div>'+
+    '<div class="dev-head"><div><div class="market-title">Ile wydaję miesięcznie na samorozwój i pracę jako Fullstack</div>'+
     '<div class="market-sub" style="margin-bottom:0">Koszty miesięczne &middot; kursy przybliżone: 1 EUR = '+num(FX.EUR,2)+' zł, 1 USD = '+num(FX.USD,2)+' zł</div></div>'+
     '<div class="dev-total blur-me"><strong>'+fmt(total)+' / mies.</strong><span>&asymp; '+fmt(total*12)+' rocznie &middot; '+num(total/income*100,1)+'% przychodu przy '+RATE_ACTUAL+' zł/h</span></div></div>'+
     '<div class="dev-grid blur-me">'+cards+'</div>';
