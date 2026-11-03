@@ -211,6 +211,7 @@
   .lg-line{display:inline-block;width:22px;height:0;border-top:2px dashed #dc2626;}
   .lg-line.thick{border-top:5px solid #dc2626;border-radius:2px;}
   .lg-line.green{border-top:2px dashed #16a34a;}
+  .lg-line.median{border-top:2px dashed #f97316;}
   .lg-line.orange{width:0;height:14px;border-top:none;border-left:2px dashed #f97316;}
   .lg-sw{display:inline-block;width:14px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,0.08);}
   .loss-box{border-radius:16px;background:var(--loss-bg);border:1px solid var(--loss-border);padding:14px 16px;margin-bottom:1rem;}
@@ -305,6 +306,7 @@
         <span><i class="lg-line"></i>100 zł/h &middot; 3 mies. okresu próbnego</span>
         <span><i class="lg-line thick"></i>100 zł/h po okresie próbnym &mdash; pod kreską</span>
         <span><i class="lg-line green"></i>115 zł/h &middot; „sto kilkanaście” z rekrutacji</span>
+        <span><i class="lg-line median"></i>130 zł/h &middot; mediana rynkowa Senior Frontend B2B</span>
         <span><i class="lg-line orange"></i>pół roku</span>
         <span><i class="lg-sw" style="background:var(--per1)"></i>okres próbny</span>
         <span><i class="lg-sw" style="background:var(--per2)"></i>po okresie próbnym</span>
@@ -523,7 +525,7 @@ rawRows.forEach(r=>{
 });
 
 // Stawka z rekrutacji ("sto kilkanaście") vs faktyczna 100 zł/h od 15.04.2026
-const RATE_ACTUAL=100,RATE_EXPECTED=115;
+const RATE_ACTUAL=100,RATE_EXPECTED=115,RATE_MARKET=130;
 const lossMap={};
 rawRows.forEach(r=>{
   if(r.client==='Firma5'||r.client==='Prognoza100') lossMap[r.d]=(lossMap[r.d]||0)+r.pln/RATE_ACTUAL*(RATE_EXPECTED-RATE_ACTUAL);
@@ -646,10 +648,12 @@ function makePeriodPlugin(keys){
         }
         ctx.restore();
       }
+      const med=hline(ctx,c,TRIAL_START,END,RATE_MARKET*160,'#f97316',2,[6,4]);
       const exp=hline(ctx,c,TRIAL_START,END,RATE_EXPECTED*160,'#16a34a',1.5,[5,4]);
       hline(ctx,c,TRIAL_START,TRIAL_END,RATE_ACTUAL*160,'#dc2626',2.5,[7,5]);
       const thick=hline(ctx,c,TRIAL_END,END,RATE_ACTUAL*160,'#dc2626',5);
       ctx.save();ctx.font='700 10px Sora';ctx.textBaseline='bottom';
+      if(med&&med.x1-med.x0>160){ctx.fillStyle='#f97316';ctx.textAlign='left';ctx.fillText(RATE_MARKET+' zł/h · mediana rynkowa',med.x0+4,med.y-3);}
       if(exp&&exp.x1-exp.x0>140){ctx.fillStyle='#16a34a';ctx.textAlign='left';ctx.fillText(RATE_EXPECTED+' zł/h · oczekiwania',exp.x0+4,exp.y-3);}
       if(thick&&thick.x1-thick.x0>80){ctx.fillStyle='#dc2626';ctx.textAlign='right';ctx.textBaseline='top';ctx.fillText(RATE_ACTUAL+' zł/h · pod kreską',thick.x1-4,thick.y+5);}
       ctx.restore();
