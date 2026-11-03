@@ -237,6 +237,23 @@
   .report-link{display:inline-flex;flex-direction:column;text-decoration:none;background:var(--ctrl-bg);border:0.5px solid var(--ctrl-border);border-radius:12px;padding:8px 12px;color:var(--ctrl-color);font-size:12px;font-weight:600;transition:all 0.15s ease;}
   .report-link:hover{background:var(--ctrl-active-bg);border-color:var(--ctrl-active-border);}
   .report-link small{font-weight:400;font-size:10.5px;opacity:0.7;margin-top:1px;}
+  .dev-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:1rem;}
+  .dev-total{text-align:right;}
+  .dev-total strong{display:block;font-size:22px;font-weight:700;color:var(--val);}
+  .dev-total span{font-size:11px;color:var(--sub-color);}
+  .dev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;}
+  .dev-card{background:var(--card-bg);border:1px solid var(--card-border);box-shadow:var(--card-shadow);border-radius:14px;padding:13px 14px;}
+  .dev-cat{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;font-weight:700;color:var(--title-color);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;}
+  .dev-cat b{font-size:15px;color:var(--val);text-transform:none;letter-spacing:0;}
+  .dev-item{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--sub-color);padding:3px 0;border-bottom:0.5px dashed var(--card-border);}
+  .dev-item span:last-child{white-space:nowrap;color:var(--title-color);font-weight:600;}
+  .dev-formula{font-size:11px;color:var(--sub-color);margin-top:8px;background:var(--ctrl-bg);border:0.5px solid var(--ctrl-border);border-radius:8px;padding:6px 8px;line-height:1.5;font-variant-numeric:tabular-nums;}
+  .dev-formula b{color:var(--ctrl-color);}
+  .dev-bars{display:flex;align-items:flex-end;gap:4px;height:44px;margin-top:10px;}
+  .dev-bar{flex:1;background:var(--line);opacity:0.75;border-radius:3px 3px 0 0;position:relative;min-height:2px;}
+  .dev-bar:last-child{opacity:1;background:#dc2626;}
+  .dev-bars-lbl{display:flex;gap:4px;font-size:9px;color:var(--sub-color);margin-top:3px;}
+  .dev-bars-lbl span{flex:1;text-align:center;}
   .lightbox{position:fixed;inset:0;z-index:10002;background:rgba(5,10,25,0.82);display:none;align-items:center;justify-content:center;padding:16px;cursor:zoom-out;}
   .lightbox.visible{display:flex;}
   .lightbox img{max-width:100%;max-height:100%;border-radius:12px;}
@@ -343,6 +360,8 @@
         <a class="report-link" href="https://bulldogjob.com/it-report/salaries/frontend" target="_blank" rel="noopener">Bulldogjob<small>IT Report: Frontend salaries</small></a>
       </div>
     </div>
+
+    <div class="market" id="devCosts"></div>
   </div>
 </div>
 
@@ -848,8 +867,73 @@ function setTheme(t){
 }
 
 buildYearBtns();
+// ========== SAMOROZWÓJ ==========
+const FX={PLN:1,EUR:4.25,USD:3.65};
+const AI_INVOICES=[['2026-04-27',89.68],['2026-05-27',90],['2026-06-27',90],['2026-07-27',90],['2026-08-27',90],['2026-09-08',125.23],['2026-10-08',180]];
+const VERCEL_USAGE=[['CDN',1.63],['Functions',24.80],['ISR i obrazy',10.06],['Web Analytics',1.83],['Build CPU',23.27]];
+const DEV_COSTS=[
+  {cat:'AI',items:[
+    ['Subskrypcja AI (faktura 08.10.2026)',180,'EUR'],
+    ['ChatGPT Codex',100,'PLN'],
+    ['OpenAI API &middot; kredyty',100,'PLN'],
+    ['Anthropic API &middot; kredyty',50,'PLN'],
+    ['Amortyzacja GPU: RTX 3080 + RTX 5060 Ti 16 GB',100,'PLN']]},
+  {cat:'DevOps',items:[
+    ['GitHub Actions',10,'USD'],
+    ['Vercel Pro',20,'USD'],
+    ['Vercel Speed Insights Plus',10,'USD'],
+    ['Vercel usage',61.59,'USD'],
+    ['Vercel kredyty',-20,'USD']]},
+  {cat:'Backend / bazy danych',items:[
+    ['Supabase Pro Plan',25,'USD'],
+    ['Supabase compute',15,'USD']]},
+  {cat:'Wiedza',items:[
+    ['Medium membership (50 USD / 12 mies.)',50/12,'USD']]},
+];
+
+const num=(v,d)=>v.toLocaleString('pl-PL',{minimumFractionDigits:d,maximumFractionDigits:d});
+const money=(v,cur)=>cur==='PLN'?num(v,0)+' zł':num(v,2)+' '+cur;
+const sumFormula=vals=>vals.map((v,i)=>i===0?num(v,2):(v<0?' − ':' + ')+num(Math.abs(v),2)).join('');
+
+function buildDevCosts(){
+  let total=0;
+  const cards=DEV_COSTS.map(g=>{
+    const pln=g.items.map(([,v,cur])=>v*FX[cur]);
+    const sub=pln.reduce((a,b)=>a+b,0);total+=sub;
+    let h='<div class="dev-card"><div class="dev-cat">'+g.cat+'<b>'+fmt(sub)+'</b></div>';
+    g.items.forEach(([n,v,cur])=>{h+='<div class="dev-item"><span>'+n+'</span><span>'+(v<0?'−':'')+money(Math.abs(v),cur)+'</span></div>';});
+    const curs=new Set(g.items.map(i=>i[2]));
+    if(curs.size===1&&g.items.length>1){
+      const cur=g.items[0][2],raw=g.items.reduce((a,i)=>a+i[1],0);
+      h+='<div class="dev-formula">'+sumFormula(g.items.map(i=>i[1]))+' = <b>'+money(raw,cur)+'</b>'+(cur!=='PLN'?' &asymp; '+fmt(sub):'')+'</div>';
+    } else if(curs.size>1){
+      h+='<div class="dev-formula">'+g.items.map(([,v,cur])=>cur==='PLN'?num(v,0):'('+num(v,2)+' '+cur+' &times; '+num(FX[cur],2)+')').join(' + ')+' = <b>'+fmt(sub)+'</b></div>';
+    }
+    if(g.cat==='Wiedza') h+='<div class="dev-formula">50 / 12 = <b>'+money(50/12,'USD')+'</b> &asymp; '+fmt(sub)+'</div>';
+    if(g.cat==='DevOps'){
+      const u=VERCEL_USAGE.map(x=>x[1]),uSum=u.reduce((a,b)=>a+b,0);
+      h+='<div class="dev-formula">Vercel usage: '+VERCEL_USAGE.map(([n,v])=>n+' '+num(v,2)).join(' + ')+' = <b>'+num(uSum,2)+' USD</b></div>';
+      h+='<div class="dev-formula">Vercel: 20 + 10 + '+num(uSum,2)+' − 20 = <b>'+num(20+10+uSum-20,2)+' USD (total)</b></div>';
+    }
+    if(g.cat==='AI'){
+      const v=AI_INVOICES.map(x=>x[1]),mx=Math.max(...v);
+      h+='<div class="dev-bars">'+AI_INVOICES.map(([d,a])=>'<div class="dev-bar" style="height:'+(a/mx*100)+'%" title="'+fmtDate(d)+': '+num(a,2)+' EUR"></div>').join('')+'</div>';
+      h+='<div class="dev-bars-lbl">'+AI_INVOICES.map(([d])=>'<span>'+MN[+d.slice(5,7)-1]+'</span>').join('')+'</div>';
+      h+='<div class="dev-formula">Faktury AI od kwietnia: '+sumFormula(v)+' = <b>'+num(v.reduce((a,b)=>a+b,0),2)+' EUR</b></div>';
+    }
+    return h+'</div>';
+  }).join('');
+  const income=RATE_ACTUAL*160;
+  document.getElementById('devCosts').innerHTML=
+    '<div class="dev-head"><div><div class="market-title">Ile przeznaczam na samorozwój jako Fullstack</div>'+
+    '<div class="market-sub" style="margin-bottom:0">Koszty miesięczne &middot; kursy przybliżone: 1 EUR = '+num(FX.EUR,2)+' zł, 1 USD = '+num(FX.USD,2)+' zł</div></div>'+
+    '<div class="dev-total"><strong>'+fmt(total)+' / mies.</strong><span>&asymp; '+fmt(total*12)+' rocznie &middot; '+num(total/income*100,1)+'% przychodu przy '+RATE_ACTUAL+' zł/h</span></div></div>'+
+    '<div class="dev-grid">'+cards+'</div>';
+}
+
 buildYearSummary();
 buildLossBox();
+buildDevCosts();
 buildChart('all');
 </script>
 </body>
